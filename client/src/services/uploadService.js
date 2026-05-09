@@ -1,20 +1,15 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const uploadPdf = async (file) => {
-  try {
-    const formData = new FormData();
+  const formData = new FormData();
+  formData.append("pdf", file);
 
-    formData.append("pdf", file);
+  const response = await axios.post(
+    `${API_URL}/api/upload`,
+    formData
+  );
 
-    const response = await axios.post(
-      "http://localhost:5000/api/upload",
-      formData
-    );
-
-    return response.data;
-
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
+  return response.data;
 };
