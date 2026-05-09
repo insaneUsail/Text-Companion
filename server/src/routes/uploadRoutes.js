@@ -22,7 +22,7 @@ const uploadToCloudinary = (fileBuffer, fileName) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: "textCompanion/books",
-        resource_type: "raw",
+        resource_type: "image",
         public_id: fileName.replace(".pdf", ""),
         format: "pdf",
       },
