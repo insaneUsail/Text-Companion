@@ -1,13 +1,13 @@
 import express from "express";
 import multer from "multer";
-import cloudinary from "../config/cloudinary.js";
+
+import { supabase } from "../config/supabase.js";
 
 const router = express.Router();
 
-const storage = multer.memoryStorage();
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
+
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true);
@@ -17,25 +17,6 @@ const upload = multer({
   },
 });
 
-const uploadToCloudinary = (fileBuffer, fileName) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: "textCompanion/books",
-        resource_type: "image",
-        public_id: fileName.replace(".pdf", ""),
-        format: "pdf",
-      },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      }
-    );
-
-    stream.end(fileBuffer);
-  });
-};
-
 router.post("/", upload.single("pdf"), async (req, res) => {
   try {
     if (!req.file) {
@@ -44,23 +25,36 @@ router.post("/", upload.single("pdf"), async (req, res) => {
       });
     }
 
-    const safeName = req.file.originalname
-      .replace(/\s+/g, "-")
-      .replace(".pdf", "");
+    const safeName =
+      req.file.originalname.replace(/\s+/g, "-");
 
-    const uniqueName = `${Date.now()}-${safeName}`;
+    const filePath =
+      `${Date.now()}-${safeName}`;
 
-    const result = await uploadToCloudinary(
-      req.file.buffer,
-      uniqueName
-    );
+    const { error } =
+      await supabase.storage
+        .from("books")
+        .upload(filePath, req.file.buffer, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data } =
+      supabase.storage
+        .from("books")
+        .getPublicUrl(filePath);
 
     res.json({
       message: "PDF uploaded successfully",
       fileName: req.file.originalname,
-      fileUrl: result.secure_url,
-      publicId: result.public_id,
+      fileUrl: data.publicUrl,
+      storagePath: filePath,
     });
+
   } catch (error) {
     console.log("UPLOAD ERROR:", error);
 
