@@ -132,10 +132,13 @@ function PdfViewer({ fileUrl, book, userId }) {
   }, [numPages]);
 
   const handleTextSelection = async () => {
-    const selection = window.getSelection();
-    const text = selection.toString().trim();
+  const selection = window.getSelection();
 
-    if (!text) return;
+  if (!selection) return;
+
+  const text = selection.toString().trim();
+
+  if (!text) return;
 
     const context =
       selection.anchorNode?.textContent || "";
@@ -304,6 +307,9 @@ function PdfViewer({ fileUrl, book, userId }) {
           >
             <div
               onMouseUp={handleTextSelection}
+              onTouchEnd={() => {
+                setTimeout(handleTextSelection, 500);
+              }}
               className="h-fit rounded-xl bg-slate-700 p-0 shadow-2xl"
             >
               <Document
